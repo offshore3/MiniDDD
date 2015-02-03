@@ -32,7 +32,7 @@ namespace MiniDDD.Storage
           
         }
 
-        public void AddParticipants<T>(IRepository<T> repository) where T : AggregateRoot, new()
+        public void AddParticipants(IUnitOfWorkParticipants repository)
         {
             lock (_lockStorage)
             {
