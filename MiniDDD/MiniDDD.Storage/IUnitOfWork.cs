@@ -9,7 +9,7 @@ namespace MiniDDD.Storage
     {
         void AddAggregateRoot(AggregateRoot aggregateRoot);
         void Commit();
-        void RollBack();
+       
 
         IEventStorage EventStorage { get;  }
         
@@ -53,23 +53,18 @@ namespace MiniDDD.Storage
             using (var transaction = new TransactionScope())
             {
 
-                foreach (var aggregate in AggregateRoots)
+                foreach (var unitOfWorkParticipantse in participantses)
                 {
-                    _storage.Save(aggregate);
+                    unitOfWorkParticipantse.Commit();
                 }
 
                 transaction.Complete();
-            }
 
-            foreach (var aggregateRoot in AggregateRoots)
-            {
-                aggregateRoot.MarkChangesAsCommitted();
+                foreach (var unitOfWorkParticipantse in participantses)
+                {
+                    unitOfWorkParticipantse.MarkAsCommited();
+                }
             }
-        }
-
-        public void RollBack()
-        {
-            // TODO: Do nothing now
         }
 
         public IEventStorage EventStorage

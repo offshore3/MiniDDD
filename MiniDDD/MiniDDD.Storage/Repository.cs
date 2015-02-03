@@ -15,6 +15,8 @@ namespace MiniDDD.Storage
 
         private IEventStorage _eventStorage;
 
+        private List<AggregateRoot> unCommitedAggreateRoots=new List<AggregateRoot>(); 
+
         private static object _lockStorage = new object();
 
         public Repository(IEventStorage eventStorage)
@@ -31,7 +33,29 @@ namespace MiniDDD.Storage
         {
             _unitOfWork = null;
         }
-        
+
+        public void Commit()
+        {
+            if(_unitOfWork==null) throw new Exception("The commit only used in UnitOfWork");
+
+            foreach (var unCommitedAggreateRoot in unCommitedAggreateRoots)
+            {
+               _unitOfWork.EventStorage.Save(unCommitedAggreateRoot);
+            }
+        }
+
+        public void MarkAsCommited()
+        {
+            foreach (var unCommitedAggreateRoot in unCommitedAggreateRoots)
+            {
+                unCommitedAggreateRoot.MarkChangesAsCommitted();
+            }
+
+            unCommitedAggreateRoots.Clear();
+            unCommitedAggreateRoots = null;
+        }
+
+
         public void Save(AggregateRoot aggregate, int expectedVersion)
         {
             if (aggregate.GetUncommittedChanges().Any())
@@ -52,12 +76,13 @@ namespace MiniDDD.Storage
                 }
                 if (_unitOfWork != null)
                 {
-                    _unitOfWork.AddAggregateRoot(aggregate);
+                    unCommitedAggreateRoots.Add(aggregate);
                 }
                 else
                 {
                     _eventStorage.Save(aggregate);
                 }
+
             }
         }
 

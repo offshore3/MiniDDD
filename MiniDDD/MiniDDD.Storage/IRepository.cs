@@ -16,5 +16,10 @@ namespace MiniDDD.Storage
         void Join(IUnitOfWork unitOfWork);
 
         void Quit();
+
+        void Commit();
+
+        void MarkAsCommited();
+
     }
 }
