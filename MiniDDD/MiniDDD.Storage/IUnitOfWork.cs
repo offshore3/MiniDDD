@@ -7,29 +7,23 @@ namespace MiniDDD.Storage
 {
     public interface IUnitOfWork
     {
-        void AddAggregateRoot(AggregateRoot aggregateRoot);
         void Commit();
-       
+        IEventStorage EventStorage { get; }
 
-        IEventStorage EventStorage { get;  }
-        
     }
 
-    public class SqlServerUnitOfWork:IUnitOfWork, IDisposable
+    public class SqlServerUnitOfWork : IUnitOfWork, IDisposable
     {
         private IEventStorage _storage;
-        private List<AggregateRoot> AggregateRoots { get; set; }
 
         private static object _lockStorage = new object();
 
-        List<IUnitOfWorkParticipants> participantses=new List<IUnitOfWorkParticipants>();
+        List<IUnitOfWorkParticipants> participantses = new List<IUnitOfWorkParticipants>();
 
         public SqlServerUnitOfWork(IEventStorage storage)
         {
             _storage = storage;
 
-            AggregateRoots=new List<AggregateRoot>();
-          
         }
 
         public void AddParticipants(IUnitOfWorkParticipants repository)
@@ -40,12 +34,6 @@ namespace MiniDDD.Storage
             }
 
             repository.Join(this);
-        }
-
-
-        public void AddAggregateRoot(AggregateRoot aggregateRoot)
-        {
-            AggregateRoots.Add(aggregateRoot);
         }
 
         public void Commit()
@@ -77,12 +65,12 @@ namespace MiniDDD.Storage
             if (_storage != null)
             {
                 _storage = null;
-               
+
             }
 
             foreach (var unitOfWorkParticipantse in participantses)
             {
-               unitOfWorkParticipantse.Quit();
+                unitOfWorkParticipantse.Quit();
             }
 
             participantses = null;
