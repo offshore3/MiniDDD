@@ -15,7 +15,8 @@ namespace MiniDDD.Domain
         public int Version { get; set; }
         public int EventVersion { get; protected set; }
 
-        protected AggregateRoot()
+
+        public AggregateRoot()
         {
             _changes = new List<IAggregateRootEvent>();
         }

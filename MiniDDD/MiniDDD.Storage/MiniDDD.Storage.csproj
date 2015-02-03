@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IUnitOfWork.cs" />
     <Compile Include="SqlServerEventStorage.cs" />
     <Compile Include="Exceptions\AggregateNotFoundException.cs" />
     <Compile Include="BaseMemento.cs" />

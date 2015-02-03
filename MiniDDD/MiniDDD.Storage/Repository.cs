@@ -11,14 +11,27 @@ namespace MiniDDD.Storage
 {
     public class Repository<T> : IRepository<T> where T : AggregateRoot, new()
     {
-        private readonly IEventStorage _storage;
+        private  IUnitOfWork _unitOfWork;
+
+        private IEventStorage _eventStorage;
+
         private static object _lockStorage = new object();
 
-        public Repository(IEventStorage storage)
+        public Repository(IEventStorage eventStorage)
         {
-            _storage = storage;
+            _eventStorage = eventStorage;
         }
 
+        public void Join(IUnitOfWork unitOfWork)
+        {
+            _unitOfWork = unitOfWork;
+        }
+
+        public void Quit()
+        {
+            _unitOfWork = null;
+        }
+        
         public void Save(AggregateRoot aggregate, int expectedVersion)
         {
             if (aggregate.GetUncommittedChanges().Any())
@@ -33,11 +46,17 @@ namespace MiniDDD.Storage
                         if (item.Version != expectedVersion)
                         {
                             throw new ConcurrencyException(string.Format("Aggregate {0} has been previously modified",
-                                                                         item.Id));
+                                item.Id));
                         }
                     }
-
-                    _storage.Save(aggregate);
+                }
+                if (_unitOfWork != null)
+                {
+                    _unitOfWork.AddAggregateRoot(aggregate);
+                }
+                else
+                {
+                    _eventStorage.Save(aggregate);
                 }
             }
         }
@@ -46,16 +65,36 @@ namespace MiniDDD.Storage
         {
             IEnumerable<IAggregateRootEvent> events;
 
-            // BaseMemento is cache
-            var memento = _storage.GetMemento<AggregateRoot>(id);
-            if (memento != null)
+            AggregateRoot memento;
+
+            if (_unitOfWork != null)
             {
-                events = _storage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
+                // BaseMemento is cache
+                 memento = _unitOfWork.EventStorage.GetMemento<AggregateRoot>(id);
+                if (memento != null)
+                {
+                    events = _unitOfWork.EventStorage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
+                }
+                else
+                {
+                    events = _unitOfWork.EventStorage.GetEvents(id);
+                }
             }
             else
             {
-                events = _storage.GetEvents(id);
+                // BaseMemento is cache
+                memento = _eventStorage.GetMemento<AggregateRoot>(id);
+                if (memento != null)
+                {
+                    events = _eventStorage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
+                }
+                else
+                {
+                    events = _eventStorage.GetEvents(id);
+                }
+                
             }
+
             var obj = new T();
             if (memento != null)
                 ((IOriginator)obj).SetMemento(memento);
@@ -63,8 +102,6 @@ namespace MiniDDD.Storage
             obj.LoadsFromHistory(events);
             return obj;
         }
-
-
       
     }
 }

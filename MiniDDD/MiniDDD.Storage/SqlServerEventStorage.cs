@@ -18,6 +18,8 @@ namespace MiniDDD.Storage
         public readonly string ConnectionString;
         private const string EventSelectClause = "SELECT EventType, Event, AggregateId, AggregateVersion, EventId, TimeStamp FROM Events With(UPDLOCK,READCOMMITTED, ROWLOCK) ";
 
+        private static object _lockStorage = new object();
+
         private List<AggregateRoot> _mementos;
 
         public SqlServerEventStorage(string connectionString)
@@ -109,6 +111,8 @@ namespace MiniDDD.Storage
                 var desEvent = Converter.ChangeTo(@event, @event.GetType());
                 //TODO: publish event?
             }
+
+            aggregate.MarkChangesAsCommitted();
         }
 
         public T GetMemento<T>(Guid aggregateId) where T : AggregateRoot
@@ -121,7 +125,10 @@ namespace MiniDDD.Storage
 
         public void SaveMemento(AggregateRoot memento)
         {
-            _mementos.Add(memento);
+            lock (_lockStorage)
+            {
+                _mementos.Add(memento);
+            }
         }
 
         private SqlConnection OpenSession(bool suppressTransactionWarning = false)
