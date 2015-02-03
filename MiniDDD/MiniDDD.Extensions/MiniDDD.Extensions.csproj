@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0CB8A5B8-6B1B-4ED8-A556-F9C0D9E031FA}</ProjectGuid>
+    <ProjectGuid>{F54ACDA9-D5AB-4D8F-99D3-C8BA089E8608}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MiniDDD.Storage</RootNamespace>
-    <AssemblyName>MiniDDD.Storage</AssemblyName>
+    <RootNamespace>MiniDDD.Extensions</RootNamespace>
+    <AssemblyName>MiniDDD.Extensions</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -30,13 +30,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -44,33 +39,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlServerEventStorage.cs" />
-    <Compile Include="Exceptions\AggregateNotFoundException.cs" />
-    <Compile Include="BaseMemento.cs" />
-    <Compile Include="InMemoryEventStorage.cs" />
-    <Compile Include="Repository.cs" />
-    <Compile Include="Exceptions\ConcurrencyException.cs" />
-    <Compile Include="IEventStorage.cs" />
-    <Compile Include="IOriginator.cs" />
-    <Compile Include="IRepository.cs" />
+    <Compile Include="ExtensionLib.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\MiniDDD.Domain\MiniDDD.Domain.csproj">
-      <Project>{4f82a1c0-9945-427b-8c86-b66c2a41c285}</Project>
-      <Name>MiniDDD.Domain</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MiniDDD.Events\MiniDDD.Events.csproj">
-      <Project>{8af9a8f2-21d6-4228-9ca5-b9df254e670d}</Project>
-      <Name>MiniDDD.Events</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MiniDDD.Extensions\MiniDDD.Extensions.csproj">
-      <Project>{f54acda9-d5ab-4d8f-99d3-c8ba089e8608}</Project>
-      <Name>MiniDDD.Extensions</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -9,21 +9,21 @@ namespace MiniDDD.Storage
 {
     public class InMemoryEventStorage : IEventStorage
     {
-        private List<Event> _events;
-        private List<BaseMemento> _mementos;
+        private List<IAggregateRootEvent> _events;
+        private List<AggregateRoot> _mementos;
 
 
 
         public InMemoryEventStorage()
         {
-            _events = new List<Event>();
-            _mementos = new List<BaseMemento>();
+            _events = new List<IAggregateRootEvent>();
+            _mementos = new List<AggregateRoot>();
 
         }
 
-        public IEnumerable<Event> GetEvents(Guid aggregateId)
+        public IEnumerable<IAggregateRootEvent> GetEvents(Guid aggregateId)
         {
-            var events = _events.Where(p => p.AggregateId == aggregateId).Select(p => p);
+            var events = _events.Where(p => p.AggregateRootId == aggregateId).Select(p => p);
             if (events.Count() == 0)
             {
                 throw new AggregateNotFoundException(string.Format("Aggregate with Id: {0} was not found", aggregateId));
@@ -41,7 +41,7 @@ namespace MiniDDD.Storage
                 version++;
                 if (version > 2)
                 {
-                    if (version % 3 == 0)
+                    if (version%3 == 0)
                     {
                         var originator = (IOriginator)aggregate;
                         var memento = originator.GetMemento();
@@ -49,25 +49,25 @@ namespace MiniDDD.Storage
                         SaveMemento(memento);
                     }
                 }
-                @event.Version = version;
+                @event.AggregateRootVersion = version;
                 _events.Add(@event);
             }
             foreach (var @event in uncommittedChanges)
             {
                 var desEvent = Converter.ChangeTo(@event, @event.GetType());
-
+                //TODO: publish event?
             }
         }
 
-        public T GetMemento<T>(Guid aggregateId) where T : BaseMemento
+        public T GetMemento<T>(Guid aggregateId) where T : AggregateRoot
         {
             var memento = _mementos.Where(m => m.Id == aggregateId).Select(m => m).LastOrDefault();
             if (memento != null)
-                return (T)memento;
+                return (T) memento;
             return null;
         }
 
-        public void SaveMemento(BaseMemento memento)
+        public void SaveMemento(AggregateRoot memento)
         {
             _mementos.Add(memento);
         }

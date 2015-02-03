@@ -44,13 +44,13 @@ namespace MiniDDD.Storage
 
         public T GetById(Guid id)
         {
-            IEnumerable<Event> events;
+            IEnumerable<IAggregateRootEvent> events;
 
             // BaseMemento is cache
-            var memento = _storage.GetMemento<BaseMemento>(id);
+            var memento = _storage.GetMemento<AggregateRoot>(id);
             if (memento != null)
             {
-                events = _storage.GetEvents(id).Where(e => e.Version >= memento.Version);
+                events = _storage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
             }
             else
             {

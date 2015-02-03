@@ -1,8 +1,10 @@
-﻿namespace MiniDDD.Storage
+﻿using MiniDDD.Domain;
+
+namespace MiniDDD.Storage
 {
     public interface IOriginator
     {
-        BaseMemento GetMemento();
-        void SetMemento(BaseMemento memento);
+        AggregateRoot GetMemento();
+        void SetMemento(AggregateRoot memento);
     }
 }

@@ -7,9 +7,9 @@ namespace MiniDDD.Storage
 {
     public interface IEventStorage
     {
-        IEnumerable<Event> GetEvents(Guid aggregateId);
+        IEnumerable<IAggregateRootEvent> GetEvents(Guid aggregateId);
         void Save(AggregateRoot aggregate);
-        T GetMemento<T>(Guid aggregateId) where T : BaseMemento;
-        void SaveMemento(BaseMemento memento);
+        T GetMemento<T>(Guid aggregateId) where T : AggregateRoot;
+        void SaveMemento(AggregateRoot memento);
     }
 }

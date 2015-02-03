@@ -9,18 +9,18 @@ namespace MiniDDD.Domain
 {
     public abstract class AggregateRoot : IEventProvider
     {
-        private readonly List<Event> _changes;
+        private readonly List<IAggregateRootEvent> _changes;
 
         public Guid Id { get; internal set; }
-        public int Version { get; internal set; }
+        public int Version { get; set; }
         public int EventVersion { get; protected set; }
 
         protected AggregateRoot()
         {
-            _changes = new List<Event>();
+            _changes = new List<IAggregateRootEvent>();
         }
 
-        public IEnumerable<Event> GetUncommittedChanges()
+        public IEnumerable<IAggregateRootEvent> GetUncommittedChanges()
         {
             return _changes;
         }
@@ -30,19 +30,19 @@ namespace MiniDDD.Domain
             _changes.Clear();
         }
 
-        public void LoadsFromHistory(IEnumerable<Event> history)
+        public void LoadsFromHistory(IEnumerable<IAggregateRootEvent> history)
         {
             foreach (var e in history) ApplyChange(e, false);
-            Version = history.Last().Version;
+            Version = history.Last().AggregateRootVersion;
             EventVersion = Version;
         }
 
-        protected void ApplyChange(Event @event)
+        protected void ApplyChange(IAggregateRootEvent @event)
         {
             ApplyChange(@event, true);
         }
 
-        private void ApplyChange(Event @event, bool isNew)
+        private void ApplyChange(IAggregateRootEvent @event, bool isNew)
         {
             dynamic d = this;
 

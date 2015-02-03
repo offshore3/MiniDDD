@@ -5,7 +5,7 @@ namespace MiniDDD.Domain
 {
     public interface IEventProvider
     {
-        void LoadsFromHistory(IEnumerable<Event> history);
-        IEnumerable<Event> GetUncommittedChanges();
+        void LoadsFromHistory(IEnumerable<IAggregateRootEvent> history);
+        IEnumerable<IAggregateRootEvent> GetUncommittedChanges();
     }
 }

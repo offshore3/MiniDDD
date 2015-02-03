@@ -8,6 +8,13 @@ namespace MiniDDD.Events
 {
     public interface IEvent
     {
-        Guid Id { get; }
+        Guid EventId { get; set; }
+    }
+
+    public interface IAggregateRootEvent : IEvent
+    {
+        int AggregateRootVersion { get; set; }
+        Guid AggregateRootId { get; set; }
+        DateTime TimeStamp { get; set; }
     }
 }
