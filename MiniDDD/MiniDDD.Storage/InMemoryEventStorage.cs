@@ -11,8 +11,7 @@ namespace MiniDDD.Storage
     {
         private List<IAggregateRootEvent> _events;
         private List<AggregateRoot> _mementos;
-
-
+        
 
         public InMemoryEventStorage()
         {
@@ -70,6 +69,17 @@ namespace MiniDDD.Storage
         public void SaveMemento(AggregateRoot memento)
         {
             _mementos.Add(memento);
+        }
+
+        public void Commit()
+        {
+            // TODO:
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+
         }
     }
 }

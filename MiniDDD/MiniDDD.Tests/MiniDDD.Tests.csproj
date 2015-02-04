@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0CB8A5B8-6B1B-4ED8-A556-F9C0D9E031FA}</ProjectGuid>
+    <ProjectGuid>{86EB3EC4-B6CB-4661-B524-FBDC70CABDF6}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MiniDDD.Storage</RootNamespace>
-    <AssemblyName>MiniDDD.Storage</AssemblyName>
+    <RootNamespace>MiniDDD.Tests</RootNamespace>
+    <AssemblyName>MiniDDD.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -38,14 +38,11 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\Castle.Windsor.3.3.0\lib\net45\Castle.Windsor.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.8\lib\net45\Newtonsoft.Json.dll</HintPath>
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.4\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -53,18 +50,15 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Installers\MiniDDDInstaller.cs" />
-    <Compile Include="IUnitOfWork.cs" />
-    <Compile Include="SqlServerEventStorage.cs" />
-    <Compile Include="Exceptions\AggregateNotFoundException.cs" />
-    <Compile Include="BaseMemento.cs" />
-    <Compile Include="InMemoryEventStorage.cs" />
-    <Compile Include="Repository.cs" />
-    <Compile Include="Exceptions\ConcurrencyException.cs" />
-    <Compile Include="IEventStorage.cs" />
-    <Compile Include="IOriginator.cs" />
-    <Compile Include="IRepository.cs" />
+    <Compile Include="BootStartup.cs" />
+    <Compile Include="UserTests.cs" />
+    <Compile Include="UserService.cs" />
+    <Compile Include="Domain\User.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MiniDDD.Domain\MiniDDD.Domain.csproj">
@@ -79,9 +73,10 @@
       <Project>{f54acda9-d5ab-4d8f-99d3-c8ba089e8608}</Project>
       <Name>MiniDDD.Extensions</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ProjectReference Include="..\MiniDDD.Storage\MiniDDD.Storage.csproj">
+      <Project>{0cb8a5b8-6b1b-4ed8-a556-f9c0d9e031fa}</Project>
+      <Name>MiniDDD.Storage</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

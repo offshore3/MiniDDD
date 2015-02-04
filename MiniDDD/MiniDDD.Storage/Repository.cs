@@ -11,12 +11,15 @@ namespace MiniDDD.Storage
 {
     public class Repository<T> : IRepository<T> where T : AggregateRoot, new()
     {
-        private readonly IEventStorage _storage;
+        private readonly IEventStorageProvider _eventStorageProvider;
+     
         private static object _lockStorage = new object();
 
-        public Repository(IEventStorage storage)
+        private  IEventStorage _eventStorage { get { return _eventStorageProvider.GetEventStorage(); } }
+
+        public Repository(IEventStorageProvider eventStorageProvider )
         {
-            _storage = storage;
+            _eventStorageProvider = eventStorageProvider;
         }
 
         public void Save(AggregateRoot aggregate, int expectedVersion)
@@ -37,7 +40,7 @@ namespace MiniDDD.Storage
                         }
                     }
 
-                    _storage.Save(aggregate);
+                    _eventStorage.Save(aggregate);
                 }
             }
         }
@@ -47,14 +50,14 @@ namespace MiniDDD.Storage
             IEnumerable<IAggregateRootEvent> events;
 
             // BaseMemento is cache
-            var memento = _storage.GetMemento<AggregateRoot>(id);
+            var memento = _eventStorage.GetMemento<AggregateRoot>(id);
             if (memento != null)
             {
-                events = _storage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
+                events = _eventStorage.GetEvents(id).Where(e => e.AggregateRootVersion >= memento.Version);
             }
             else
             {
-                events = _storage.GetEvents(id);
+                events = _eventStorage.GetEvents(id);
             }
             var obj = new T();
             if (memento != null)
@@ -64,7 +67,5 @@ namespace MiniDDD.Storage
             return obj;
         }
 
-
-      
     }
 }

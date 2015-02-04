@@ -17,4 +17,22 @@ namespace MiniDDD.Events
         Guid AggregateRootId { get; set; }
         DateTime TimeStamp { get; set; }
     }
+
+    public class AggregateRootEvent : IAggregateRootEvent
+    {
+        public AggregateRootEvent()
+        {
+            EventId = Guid.NewGuid();
+        }
+
+        public Guid EventId { get;  set; }
+        public int AggregateRootVersion { get; set; }
+        public Guid AggregateRootId { get; set; }
+
+        public DateTime TimeStamp
+        {
+            get { return DateTime.Now; }
+            set { }
+        }
+    }
 }

@@ -15,15 +15,21 @@ namespace MiniDDD.Storage
 {
     public class SqlServerEventStorage : IEventStorage
     {
-        public readonly string ConnectionString;
+        private readonly string _connectionString;
         private const string EventSelectClause = "SELECT EventType, Event, AggregateId, AggregateVersion, EventId, TimeStamp FROM Events With(UPDLOCK,READCOMMITTED, ROWLOCK) ";
 
         private List<AggregateRoot> _mementos;
 
+        private List<AggregateRoot> _pendingAggregateRoots;
+
+        private static object _aggreateCache = new object();
+        private static object _pendingAggregatelocker = new object();
+
         public SqlServerEventStorage(string connectionString)
         {
-            ConnectionString = connectionString;
+            _connectionString = connectionString;
             _mementos = new List<AggregateRoot>();
+            _pendingAggregateRoots = new List<AggregateRoot>();
         }
 
         public IEnumerable<IAggregateRootEvent> GetEvents(Guid aggregateId)
@@ -60,55 +66,40 @@ namespace MiniDDD.Storage
 
         public void Save(AggregateRoot aggregate)
         {
-            EnsureEventsTableExists();
-
             List<IAggregateRootEvent> uncommittedChanges = aggregate.GetUncommittedChanges().ToList();
-
+            
             var version = aggregate.Version;
-            using (var connection = OpenSession())
-            {
-                foreach (var @event in uncommittedChanges)
-                {
-
-                    version++;
-                    if (version > 2)
-                    {
-                        if (version % 3 == 0)
-                        {
-                            var originator = (IOriginator)aggregate;
-                            var memento = originator.GetMemento();
-                            memento.Version = version;
-                            SaveMemento(memento);
-                        }
-                    }
-
-                    @event.AggregateRootVersion = version;
-
-
-                    using (var command = connection.CreateCommand())
-                    {
-                        command.CommandType = CommandType.Text;
-
-                        command.CommandText += "INSERT Events With(READCOMMITTED, ROWLOCK) (AggregateId, AggregateVersion, EventType, EventId, TimeStamp, Event) VALUES(@AggregateId, @AggregateVersion, @EventType, @EventId, @TimeStamp, @Event)";
-
-                        command.Parameters.Add(new SqlParameter("AggregateId", @event.AggregateRootId));
-                        command.Parameters.Add(new SqlParameter("AggregateVersion", @event.AggregateRootVersion));
-                        command.Parameters.Add(new SqlParameter("EventType", @event.GetType().FullName));
-                        command.Parameters.Add(new SqlParameter("EventId", @event.EventId));
-                        command.Parameters.Add(new SqlParameter("TimeStamp", @event.TimeStamp));
-
-                        command.Parameters.Add(new SqlParameter("Event", JsonConvert.SerializeObject(@event, Formatting.Indented)));
-
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
 
             foreach (var @event in uncommittedChanges)
             {
-                var desEvent = Converter.ChangeTo(@event, @event.GetType());
-                //TODO: publish event?
+                version++;
+                if (version > 2)
+                {
+                    if (version%3 == 0)
+                    {
+                        var originator = (IOriginator) aggregate;
+                        var memento = originator.GetMemento();
+                        memento.Version = version;
+                        SaveMemento(memento);
+                    }
+                }
+
+                @event.AggregateRootVersion = version;
             }
+
+            lock (_pendingAggregatelocker)
+            {
+                var existAggregateRoot = _pendingAggregateRoots.SingleOrDefault(x => x.Id == aggregate.Id);
+                if (existAggregateRoot == null)
+                {
+                    _pendingAggregateRoots.Add(aggregate);
+                }
+                else
+                {
+                    existAggregateRoot = aggregate;
+                }
+            }
+
         }
 
         public T GetMemento<T>(Guid aggregateId) where T : AggregateRoot
@@ -121,12 +112,78 @@ namespace MiniDDD.Storage
 
         public void SaveMemento(AggregateRoot memento)
         {
-            _mementos.Add(memento);
+            lock (_aggreateCache)
+            {
+                var _cacheAggregateRoot = _mementos.SingleOrDefault(x => x.Id == memento.Id);
+                if (_cacheAggregateRoot == null)
+                {
+                    _cacheAggregateRoot = memento;
+                }
+                else
+                {
+                    _mementos.Add(memento);
+                }
+            }
+           
+        }
+
+        public void Commit()
+        {
+            EnsureEventsTableExists();
+
+            using (var connection = OpenSession())
+            {
+                using (var transactionScope = new TransactionScope())
+                {
+                    foreach (var pendingAggregateRoot in _pendingAggregateRoots)
+                    {
+                        foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
+                        {
+                            using (var command = connection.CreateCommand())
+                            {
+                                command.CommandType = CommandType.Text;
+
+                                command.CommandText += "INSERT Events With(READCOMMITTED, ROWLOCK) (AggregateId, AggregateVersion, EventType, EventId, TimeStamp, Event) VALUES(@AggregateId, @AggregateVersion, @EventType, @EventId, @TimeStamp, @Event)";
+
+                                command.Parameters.Add(new SqlParameter("AggregateId", @event.AggregateRootId));
+                                command.Parameters.Add(new SqlParameter("AggregateVersion", @event.AggregateRootVersion));
+                                command.Parameters.Add(new SqlParameter("EventType", @event.GetType().FullName));
+                                command.Parameters.Add(new SqlParameter("EventId", @event.EventId));
+                                command.Parameters.Add(new SqlParameter("TimeStamp", @event.TimeStamp));
+
+                                command.Parameters.Add(new SqlParameter("Event", JsonConvert.SerializeObject(@event, Formatting.Indented)));
+
+                                command.ExecuteNonQuery();
+                            }
+
+                        }
+
+
+                        foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
+                        {
+                            var desEvent = Converter.ChangeTo(@event, @event.GetType());
+                            //TODO: publish event?
+                        }
+                    }
+
+                   
+                    transactionScope.Complete();
+
+                    foreach (var pendingAggregateRoot in _pendingAggregateRoots)
+                    {
+                        pendingAggregateRoot.MarkChangesAsCommitted();
+                    }
+
+                    _pendingAggregateRoots.Clear();
+                    _pendingAggregateRoots = null;
+
+                }
+            }
         }
 
         private SqlConnection OpenSession(bool suppressTransactionWarning = false)
         {
-            var connection = new SqlConnection(ConnectionString);
+            var connection = new SqlConnection(_connectionString);
             connection.Open();
             if (!suppressTransactionWarning && Transaction.Current == null)
             {
@@ -156,7 +213,7 @@ namespace MiniDDD.Storage
         {
             lock (VerifiedTables)
             {
-                if (!VerifiedTables.Contains(ConnectionString))
+                if (!VerifiedTables.Contains(_connectionString))
                 {
                     int exists;
                     using (var _connection = OpenSession())
@@ -198,10 +255,15 @@ CREATE UNIQUE NONCLUSTERED INDEX [SqlTimeStamp] ON [dbo].[Events]
                                 createTableCommand.ExecuteNonQuery();
                             }
                         }
-                        VerifiedTables.Add(ConnectionString);
+                        VerifiedTables.Add(_connectionString);
                     }
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
         }
     }
 }
