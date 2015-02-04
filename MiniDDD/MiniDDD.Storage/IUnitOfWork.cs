@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 using Castle.Windsor;
 
 namespace MiniDDD.Storage
@@ -15,15 +16,19 @@ namespace MiniDDD.Storage
     public class SqlServerUnitOfWork : IUnitOfWork
     {
         private readonly IEventStorage _eventStorage;
+        private TransactionScope _transactionScope;
 
         public SqlServerUnitOfWork(IEventStorageProvider eventStorageProvider)
         {
+            _transactionScope=  new TransactionScope();
             _eventStorage = eventStorageProvider.GetEventStorage();
         }
 
         public void Commit()
         {
-            _eventStorage.Commit();
+            _eventStorage.Committing();
+            _transactionScope.Complete();
+            _eventStorage.MarkCommitted();
         }
 
         public void Dispose()
@@ -32,6 +37,10 @@ namespace MiniDDD.Storage
             {
                 _eventStorage.Dispose();
 
+            }
+            if (_transactionScope != null)
+            {
+                _transactionScope.Dispose();
             }
             GC.SuppressFinalize(this);
         }

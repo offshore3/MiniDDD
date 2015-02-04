@@ -12,6 +12,7 @@ namespace MiniDDD.Tests
     [TestFixture]
     public class UserTests
     {
+        private Guid userId = new Guid("E4B1D05C-CD6B-40F2-B442-B20A1A8BB916");
 
         private UserService _userService;
 
@@ -26,14 +27,14 @@ namespace MiniDDD.Tests
         [Test]
         public void Test_Create_User()
         {
-            _userService.Create("Jack", "Wang");
+            _userService.Create(userId,"Jack", "Wang");
         }
 
         [Test]
         public void Test_ChangeFirstName()
         {
-            Guid userId = new Guid("120D028C-09FE-4D9A-BBB0-52D50E06A47F");
-            _userService.ChangeFirstName("DESHUI",userId);
+            
+            _userService.ChangeFirstName("xx",userId);
 
             User user = _userService.Get(userId);
         }
@@ -41,7 +42,6 @@ namespace MiniDDD.Tests
         [Test]
         public void Test_Get_User()
         {
-            Guid userId = new Guid("120D028C-09FE-4D9A-BBB0-52D50E06A47F");
             User user = _userService.Get(userId);
 
             Assert.IsNotNull(user);

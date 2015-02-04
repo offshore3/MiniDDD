@@ -9,10 +9,8 @@ namespace MiniDDD.Storage
     {
         IEnumerable<IAggregateRootEvent> GetEvents(Guid aggregateId);
         void Save(AggregateRoot aggregate);
-        T GetMemento<T>(Guid aggregateId) where T : AggregateRoot;
-        void SaveMemento(AggregateRoot memento);
-
-        void Commit();
+        void Committing();
+        void MarkCommitted();
 
     }
 }

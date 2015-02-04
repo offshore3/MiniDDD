@@ -17,18 +17,14 @@ namespace MiniDDD.Storage
     {
         private readonly string _connectionString;
         private const string EventSelectClause = "SELECT EventType, Event, AggregateId, AggregateVersion, EventId, TimeStamp FROM Events With(UPDLOCK,READCOMMITTED, ROWLOCK) ";
-
-        private List<AggregateRoot> _mementos;
-
+        
         private List<AggregateRoot> _pendingAggregateRoots;
 
-        private static object _aggreateCache = new object();
         private static object _pendingAggregatelocker = new object();
 
         public SqlServerEventStorage(string connectionString)
         {
             _connectionString = connectionString;
-            _mementos = new List<AggregateRoot>();
             _pendingAggregateRoots = new List<AggregateRoot>();
         }
 
@@ -75,17 +71,35 @@ namespace MiniDDD.Storage
                 version++;
                 if (version > 2)
                 {
-                    if (version%3 == 0)
-                    {
-                        var originator = (IOriginator) aggregate;
-                        var memento = originator.GetMemento();
-                        memento.Version = version;
-                        SaveMemento(memento);
-                    }
+                    // TODO: think a good way for snapshot
+                    //if (version%3 == 0)
+                    //{
+                    //    var originator = (IOriginator) aggregate;
+                    //    var memento = originator.GetMemento();
+                    //    memento.Version = version;
+                    //    SaveMemento(memento);
+                    //}
                 }
 
                 @event.AggregateRootVersion = version;
             }
+
+            // No Unit of work
+            if (Transaction.Current == null)
+            {
+                EnsureEventsTableExists();
+
+                using (var connection = OpenSession())
+                {
+                    CommitAggreate(aggregate, connection);
+                }
+
+                aggregate.MarkChangesAsCommitted();
+
+                return;
+            }
+
+            // in Unit of work
 
             lock (_pendingAggregatelocker)
             {
@@ -99,86 +113,62 @@ namespace MiniDDD.Storage
                     existAggregateRoot = aggregate;
                 }
             }
-
         }
 
-        public T GetMemento<T>(Guid aggregateId) where T : AggregateRoot
-        {
-            var memento = _mementos.Where(m => m.Id == aggregateId).Select(m => m).LastOrDefault();
-            if (memento != null)
-                return (T)memento;
-            return null;
-        }
-
-        public void SaveMemento(AggregateRoot memento)
-        {
-            lock (_aggreateCache)
-            {
-                var _cacheAggregateRoot = _mementos.SingleOrDefault(x => x.Id == memento.Id);
-                if (_cacheAggregateRoot == null)
-                {
-                    _cacheAggregateRoot = memento;
-                }
-                else
-                {
-                    _mementos.Add(memento);
-                }
-            }
-           
-        }
-
-        public void Commit()
+        public void Committing()
         {
             EnsureEventsTableExists();
 
             using (var connection = OpenSession())
             {
-                using (var transactionScope = new TransactionScope())
+                    foreach (var pendingAggregateRoot in _pendingAggregateRoots)
+                    {
+                        CommitAggreate(pendingAggregateRoot, connection);
+                    }
+            }
+            
+        }
+
+        private static void CommitAggreate(AggregateRoot pendingAggregateRoot, SqlConnection connection)
+        {
+            foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
+            {
+                using (var command = connection.CreateCommand())
                 {
-                    foreach (var pendingAggregateRoot in _pendingAggregateRoots)
-                    {
-                        foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
-                        {
-                            using (var command = connection.CreateCommand())
-                            {
-                                command.CommandType = CommandType.Text;
+                    command.CommandType = CommandType.Text;
 
-                                command.CommandText += "INSERT Events With(READCOMMITTED, ROWLOCK) (AggregateId, AggregateVersion, EventType, EventId, TimeStamp, Event) VALUES(@AggregateId, @AggregateVersion, @EventType, @EventId, @TimeStamp, @Event)";
+                    command.CommandText +=
+                        "INSERT Events With(READCOMMITTED, ROWLOCK) (AggregateId, AggregateVersion, EventType, EventId, TimeStamp, Event) VALUES(@AggregateId, @AggregateVersion, @EventType, @EventId, @TimeStamp, @Event)";
 
-                                command.Parameters.Add(new SqlParameter("AggregateId", @event.AggregateRootId));
-                                command.Parameters.Add(new SqlParameter("AggregateVersion", @event.AggregateRootVersion));
-                                command.Parameters.Add(new SqlParameter("EventType", @event.GetType().FullName));
-                                command.Parameters.Add(new SqlParameter("EventId", @event.EventId));
-                                command.Parameters.Add(new SqlParameter("TimeStamp", @event.TimeStamp));
+                    command.Parameters.Add(new SqlParameter("AggregateId", @event.AggregateRootId));
+                    command.Parameters.Add(new SqlParameter("AggregateVersion", @event.AggregateRootVersion));
+                    command.Parameters.Add(new SqlParameter("EventType", @event.GetType().FullName));
+                    command.Parameters.Add(new SqlParameter("EventId", @event.EventId));
+                    command.Parameters.Add(new SqlParameter("TimeStamp", @event.TimeStamp));
 
-                                command.Parameters.Add(new SqlParameter("Event", JsonConvert.SerializeObject(@event, Formatting.Indented)));
+                    command.Parameters.Add(new SqlParameter("Event", JsonConvert.SerializeObject(@event, Formatting.Indented)));
 
-                                command.ExecuteNonQuery();
-                            }
-
-                        }
-
-
-                        foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
-                        {
-                            var desEvent = Converter.ChangeTo(@event, @event.GetType());
-                            //TODO: publish event?
-                        }
-                    }
-
-                   
-                    transactionScope.Complete();
-
-                    foreach (var pendingAggregateRoot in _pendingAggregateRoots)
-                    {
-                        pendingAggregateRoot.MarkChangesAsCommitted();
-                    }
-
-                    _pendingAggregateRoots.Clear();
-                    _pendingAggregateRoots = null;
-
+                    command.ExecuteNonQuery();
                 }
             }
+
+
+            foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
+            {
+                var desEvent = Converter.ChangeTo(@event, @event.GetType());
+                //TODO: publish event?
+            }
+        }
+
+        public void MarkCommitted()
+        {
+            foreach (var pendingAggregateRoot in _pendingAggregateRoots)
+            {
+                pendingAggregateRoot.MarkChangesAsCommitted();
+            }
+
+            _pendingAggregateRoots.Clear();
+            _pendingAggregateRoots = null;
         }
 
         private SqlConnection OpenSession(bool suppressTransactionWarning = false)

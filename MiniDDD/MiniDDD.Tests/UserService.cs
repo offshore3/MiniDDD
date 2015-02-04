@@ -26,23 +26,23 @@ namespace MiniDDD.Tests
         }
 
 
-        public void Create(string firstName, string lastName)
+        public void Create(Guid id,string firstName, string lastName)
         {
-            using (var unitOfWork=_unitOfWorkFactory.GetCurrentUnitOfWork())
-            {
+            //using (var unitOfWork=_unitOfWorkFactory.GetCurrentUnitOfWork())
+            //{
                 User user=new User();
-                user.Create(Guid.NewGuid(),firstName,lastName);
+                user.Create(id,firstName,lastName);
                 _userRepository.Save(user,-1);
 
-                unitOfWork.Commit();
-            }
+            //    unitOfWork.Commit();
+            //}
         }
 
-        public void ChangeFirstName(string firstName,Guid UserId)
+        public void ChangeFirstName(string firstName,Guid userId)
         {
             using (var unitOfWork = _unitOfWorkFactory.GetCurrentUnitOfWork())
             {
-                User user = _userRepository.GetById(UserId);
+                User user = _userRepository.GetById(userId);
                 user.ChangeFirstName(firstName);
 
                 _userRepository.Save(user, user.Version);

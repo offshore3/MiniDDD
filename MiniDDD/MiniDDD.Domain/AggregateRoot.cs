@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MiniDDD.Events;
 
 namespace MiniDDD.Domain
@@ -39,6 +37,7 @@ namespace MiniDDD.Domain
 
         protected void ApplyChange(IAggregateRootEvent @event)
         {
+            @event.AggregateRootId = this.Id;
             ApplyChange(@event, true);
         }
 

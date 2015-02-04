@@ -57,12 +57,10 @@
     <Compile Include="IUnitOfWork.cs" />
     <Compile Include="SqlServerEventStorage.cs" />
     <Compile Include="Exceptions\AggregateNotFoundException.cs" />
-    <Compile Include="BaseMemento.cs" />
     <Compile Include="InMemoryEventStorage.cs" />
     <Compile Include="Repository.cs" />
     <Compile Include="Exceptions\ConcurrencyException.cs" />
     <Compile Include="IEventStorage.cs" />
-    <Compile Include="IOriginator.cs" />
     <Compile Include="IRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

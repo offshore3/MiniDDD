@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MiniDDD.Domain;
 using MiniDDD.Events;
 
@@ -11,6 +7,7 @@ namespace MiniDDD.Tests.Domain
     public class User : AggregateRoot,
         IHandle<UserCreatedEvent>,
         IHandle<ChangeFirstNameEvent>
+        
     {
         private string FirstName { get; set; }
         private string LastName { get; set; }
@@ -18,7 +15,6 @@ namespace MiniDDD.Tests.Domain
 
         public void Handle(UserCreatedEvent e)
         {
-          
             this.FirstName = e.FirstName;
             this.LastName = e.LastName;
             this.Id = e.AggregateRootId;
@@ -28,16 +24,15 @@ namespace MiniDDD.Tests.Domain
         {
             ApplyChange(new ChangeFirstNameEvent()
             {
-                AggregateRootId = this.Id,
                 FirstName = firstName
             });
         }
 
         public  void Create(Guid id,string firstName, string lastName)
         {
+           this.Id = id;
            ApplyChange(new UserCreatedEvent
            {
-               AggregateRootId = id,
                FirstName = firstName,
                LastName = lastName
            });
@@ -47,6 +42,7 @@ namespace MiniDDD.Tests.Domain
         {
             this.FirstName = e.FirstName;
         }
+
     }
 
     public class ChangeFirstNameEvent : AggregateRootEvent
@@ -56,7 +52,6 @@ namespace MiniDDD.Tests.Domain
 
     public class UserCreatedEvent:AggregateRootEvent
     {
-    
         public string FirstName { get; set; }
         public string LastName { get; set; }
     }
