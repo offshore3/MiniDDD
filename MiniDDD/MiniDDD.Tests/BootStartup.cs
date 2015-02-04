@@ -16,13 +16,15 @@ namespace MiniDDD.Tests
         public static IWindsorContainer Start()
         {
             var container = new WindsorContainer();
+            container.Register(Component.For<IWindsorContainer>().Instance(container).LifestylePerThread());
+
             container.Install(
                 FromAssembly.This(),
                 FromAssembly.Containing<MiniDDDInstaller>()
               
                 );
             container.Register(Component.For<UserService>());
-            container.Register(Component.For<IWindsorContainer>().Instance(container).LifestylePerThread());
+           
             return container;
         }
     }

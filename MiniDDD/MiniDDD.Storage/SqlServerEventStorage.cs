@@ -8,23 +8,27 @@ using System.Threading.Tasks;
 using System.Transactions;
 using MiniDDD.Domain;
 using MiniDDD.Events;
+using MiniDDD.Events.EventUtils;
 using MiniDDD.Extensions;
 using Newtonsoft.Json;
+using Converter = MiniDDD.Domain.Converter;
 
 namespace MiniDDD.Storage
 {
     public class SqlServerEventStorage : IEventStorage
     {
         private readonly string _connectionString;
+        private readonly IEventBus _eventBus;
         private const string EventSelectClause = "SELECT EventType, Event, AggregateId, AggregateVersion, EventId, TimeStamp FROM Events With(UPDLOCK,READCOMMITTED, ROWLOCK) ";
         
         private List<AggregateRoot> _pendingAggregateRoots;
 
         private static object _pendingAggregatelocker = new object();
 
-        public SqlServerEventStorage(string connectionString)
+        public SqlServerEventStorage(string connectionString,IEventBus eventBus)
         {
             _connectionString = connectionString;
+            _eventBus = eventBus;
             _pendingAggregateRoots = new List<AggregateRoot>();
         }
 
@@ -129,7 +133,7 @@ namespace MiniDDD.Storage
             
         }
 
-        private static void CommitAggreate(AggregateRoot pendingAggregateRoot, SqlConnection connection)
+        private void CommitAggreate(AggregateRoot pendingAggregateRoot, SqlConnection connection)
         {
             foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
             {
@@ -156,7 +160,8 @@ namespace MiniDDD.Storage
             foreach (var @event in pendingAggregateRoot.GetUncommittedChanges())
             {
                 var desEvent = Converter.ChangeTo(@event, @event.GetType());
-                //TODO: publish event?
+                // publish event so that can update QueryModel
+                _eventBus.Publish(desEvent);
             }
         }
 

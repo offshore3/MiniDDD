@@ -1,4 +1,4 @@
-﻿namespace MiniDDD.Events
+﻿namespace MiniDDD.Events.EventUtils
 {
     public interface IHandle<TEvent> where TEvent : IAggregateRootEvent
     {

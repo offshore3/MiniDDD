@@ -1,6 +1,7 @@
 ﻿using System;
 using MiniDDD.Domain;
 using MiniDDD.Events;
+using MiniDDD.Events.EventUtils;
 
 namespace MiniDDD.Tests.Domain
 {
