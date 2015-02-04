@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MiniDDD.Domain;
 using MiniDDD.Events;
 using MiniDDD.Storage.Exceptions;
+using MiniDDD.Storage.UnitOfWork;
 
 namespace MiniDDD.Storage
 {

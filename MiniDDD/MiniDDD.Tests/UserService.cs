@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MiniDDD.Storage;
+using MiniDDD.Storage.UnitOfWork;
 using MiniDDD.Tests.Domain;
 
 namespace MiniDDD.Tests
