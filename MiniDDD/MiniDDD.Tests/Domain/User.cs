@@ -5,9 +5,7 @@ using MiniDDD.Events.EventUtils;
 
 namespace MiniDDD.Tests.Domain
 {
-    public class User : AggregateRoot,
-        IHandle<UserCreatedEvent>,
-        IHandle<ChangeFirstNameEvent>
+    public class User : AggregateRoot
         
     {
         private string FirstName { get; set; }

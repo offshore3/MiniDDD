@@ -53,6 +53,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DocumentDB\IDocumentDbSession.cs" />
     <Compile Include="Installers\MiniDDDInstaller.cs" />
     <Compile Include="UnitOfWork\EventStorageProvider.cs" />
     <Compile Include="UnitOfWork\IEventStorageProvider.cs" />
